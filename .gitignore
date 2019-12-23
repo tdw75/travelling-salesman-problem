@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+/handout.pdf
+/_coursera
+/submit.py
