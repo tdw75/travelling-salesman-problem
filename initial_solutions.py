@@ -4,8 +4,7 @@ import time
 
 class NearestNeighbour(TspSetUp):
     def __init__(self, input_data):
-        TspSetUp.__init__(self, input_data)
-        self.tour = []
+        super().__init__(input_data)
 
     def nn_initial_solution(self, starting_node):
         unvisted_nodes = self.nodes
@@ -25,14 +24,19 @@ class NearestNeighbour(TspSetUp):
         self.obj_value += self.dist_matrix[current_node][starting_node]
 
 
-if __name__ == "__main__":
-    start_time = time.time()
+class ChristofidesAlgorithm(TspSetUp):
+    def __init__(self, input_data):
+        super().__init__(input_data)
 
-    with open('data\\tsp_493_1', 'r') as input_data_file:
+
+if __name__ == "__main__":
+    with open('data\\tsp_51_1', 'r') as input_data_file:
         input_data = input_data_file.read()
 
+    start_time = time.time()
     nn = NearestNeighbour(input_data)
-    nn.nn_initial_solution(starting_node=0)
+    nn.nn_initial_solution(starting_node=44)
     print(nn.tour)
     print(nn.obj_value)
+    nn.plot_tour()
     print("execution time = {:.1f} seconds".format(time.time() - start_time))
