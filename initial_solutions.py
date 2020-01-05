@@ -7,7 +7,7 @@ class NearestNeighbour(TspSetUp):
         super().__init__(input_data)
 
     def nn_initial_solution(self, starting_node):
-        unvisted_nodes = self.nodes
+        unvisted_nodes = self.nodes.copy()
         unvisted_nodes.remove(starting_node)
         self.tour = [starting_node]
         self.obj_value = 0
