@@ -45,6 +45,7 @@ class TspSetUp:
         self.dist_matrix = distance_matrix(self.coordinates)
         self.tour = []
         self.obj_value = None
+        self.edges = None
 
     def calculate_tour_length(self):
         self.obj_value = euclidean_distance(self.coordinates[self.tour[-1]], self.coordinates[self.tour[0]])
@@ -60,8 +61,11 @@ class TspSetUp:
             self.tour.append(next_node)
             length -= 1
 
+        self.calculate_tour_length()
+
     def trivial_tour(self):
         self.tour = range(0, self.node_count)
+        self.calculate_tour_length()
 
     def save_solution(self):
         pass
@@ -78,6 +82,13 @@ class TspSetUp:
 
         nx.draw(graph, positions, with_labels=True)
         plt.show()
+
+    def generate_edges(self):
+        self.edges = []
+        self.edges.append((self.tour[-1], self.tour[0]))
+
+        for i in range(self.node_count - 1):
+            self.edges.append((self.tour[i], self.tour[i + 1]))
 
 
 if __name__ == "__main__":
