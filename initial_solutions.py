@@ -29,6 +29,27 @@ class ChristofidesAlgorithm(TspSetUp):
         super().__init__(input_data)
 
 
+class InitialSolution(NearestNeighbour):
+    def __init__(self, input_data):
+        super().__init__(input_data)
+
+    def generate_initial_solution(self, initial_solution):
+
+        initial_solutions = ['nearest neighbour', 'sequential tour', 'random tour']
+
+        if initial_solution not in initial_solutions:
+            raise ValueError('Initial solution must be one of \n{}'.format(initial_solutions))
+
+        if initial_solution == "nearest neighbour":
+            self.nn_initial_solution(starting_node=np.random.randint(self.node_count))
+        if initial_solution == "sequential tour":
+            self.trivial_tour()
+        if initial_solution == 'random tour':
+            self.random_tour()
+
+        self.obj_value = calculate_tour_length(self.tour, self.dist_matrix, self.node_count)
+
+
 if __name__ == "__main__":
     with open('data\\tsp_51_1', 'r') as input_data_file:
         input_data = input_data_file.read()
