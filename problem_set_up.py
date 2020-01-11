@@ -39,6 +39,15 @@ def parse_input_data(input_data):
     return points, node_count, nodes
 
 
+def calculate_tour_length(tour, dist_matrix, node_count):
+    obj_val = dist_matrix[tour[-1]][tour[0]]
+
+    for idx in range(0, node_count - 1):
+        obj_val += dist_matrix[tour[idx]][tour[idx + 1]]
+
+    return obj_val
+
+
 class TspSetUp:
     def __init__(self, input_data):
         self.coordinates, self.node_count, self.nodes = parse_input_data(input_data)
@@ -46,12 +55,6 @@ class TspSetUp:
         self.tour = []
         self.obj_value = None
         self.edges = None
-
-    def calculate_tour_length(self):
-        self.obj_value = euclidean_distance(self.coordinates[self.tour[-1]], self.coordinates[self.tour[0]])
-
-        for idx in range(0, self.node_count - 1):
-            self.obj_value += euclidean_distance(self.coordinates[self.tour[idx]], self.coordinates[self.tour[idx + 1]])
 
     def random_tour(self):
 
@@ -61,11 +64,11 @@ class TspSetUp:
             self.tour.append(next_node)
             length -= 1
 
-        self.calculate_tour_length()
+        self.obj_value = calculate_tour_length(self.tour, self.dist_matrix, self.node_count)
 
     def trivial_tour(self):
-        self.tour = range(0, self.node_count)
-        self.calculate_tour_length()
+        self.tour = list(range(0, self.node_count))
+        self.obj_value = calculate_tour_length(self.tour, self.dist_matrix, self.node_count)
 
     def save_solution(self):
         pass
