@@ -1,30 +1,43 @@
-from problem_set_up import *
 from initial_solutions import *
-import time
+from problem_set_up import calculate_tour_length
 
 
 def anti_clockwise(a, b, c):
     return (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x)
 
 
-class TwoOpt(NearestNeighbour):
-    def __init__(self, input_data, initial_solution):
+def two_opt_swap(tour, i, j):
+    if i < j:
+        route = tour[:i]
+        reversed_section = tour[i:j + 1]
+        reversed_section.reverse()
+        route += reversed_section
+        route += tour[j + 1:]
+    else:
+        route = tour[j + 1:i]
+        reversed_section = tour[i:] + tour[:j + 1]
+        reversed_section.reverse()
+        route += reversed_section
+
+    return route
+
+
+def metropolis(tour_old, tour_new, obj_old, obj_new, temp):
+    delta = obj_new - obj_old
+    prob = np.exp(-delta / temp)
+
+    if obj_new <= obj_old:
+        return tour_new, obj_new
+    elif np.random.rand() <= prob:
+        return tour_new, obj_new
+    else:
+        return tour_old, obj_old
+
+
+class TwoOpt(InitialSolution):
+    def __init__(self, input_data):
         super().__init__(input_data)
-        self.initial_solution = initial_solution
-        self.initial_solutions = ['nearest neighbour', 'sequential tour', 'random tour']
         self.intersecting_edges = None
-
-    def generate_initial_solution(self):
-
-        if self.initial_solution not in self.initial_solutions:
-            raise ValueError()
-
-        if self.initial_solution == "nearest neighbour":
-            self.nn_initial_solution(starting_node=np.random.randint(self.node_count))
-        if self.initial_solution == "sequential tour":
-            self.trivial_tour()
-        if self.initial_solution == 'random tour':
-            self.random_tour()
 
     def intersect(self, edge1, edge2):
 
@@ -57,19 +70,64 @@ class TwoOpt(NearestNeighbour):
 
         print(start)
 
-    def two_opt_swap(self):
-        pass
+    def search(self, max_iterations):
 
-    def search(self):
-        pass
+        for iteration in range(max_iterations):
+            i = np.random.randint(self.node_count)
+            j = np.random.randint(self.node_count)
+
+            if abs(i - j) <= 1:
+                continue
+
+            start = min(i, j)
+            end = max(i, j)
+
+            tour = two_opt_swap(self.tour, start, end)
+            if calculate_tour_length(tour, self.dist_matrix, self.node_count) < self.obj_value:
+                self.tour = tour
+
+        calculate_tour_length(self.tour, self.dist_matrix, self.node_count)
+
+
+def cities_to_swap(node_count):
+    i = np.random.randint(node_count)
+    j = np.random.randint(node_count)
+
+    if i == j:
+        i, j = cities_to_swap(node_count)
+
+    return i, j
+
+
+class SimulatedAnnealing(InitialSolution):
+    def __init__(self, input_data):
+        super().__init__(input_data)
+        self.search_iterations = 0
+        self.obj_tracker = []
+
+    def search(self, inital_temp, cooling_rate):
+        temp = inital_temp
+
+        iterations = 0
+        self.obj_tracker = []
+
+        while temp > 1:
+            i, j = cities_to_swap(self.node_count)
+
+            tour_new = two_opt_swap(self.tour, i, j)
+            tour_old = self.tour
+            obj_old = self.obj_value
+            obj_new = calculate_tour_length(tour_new, self.dist_matrix, self.node_count)
+
+            self.tour, self.obj_value = metropolis(tour_old, tour_new, obj_old, obj_new, temp)
+            self.obj_tracker.append(self.obj_value)
+            temp *= 1 - cooling_rate
+            iterations += 1
+
+        self.search_iterations = iterations
 
 
 class IteratedGreedy(TspSetUp):
-    def __init__(self, input_data):
-        super().__init__(input_data)
-
-
-class SimulatedAnnealing(TspSetUp):
     def __init__(self, input_data):
         super().__init__(input_data)
 
