@@ -132,3 +132,4 @@ dmypy.json
 /submit.py
 /solver_original.py
 /tsp_practice.ipynb
+/solver.py
