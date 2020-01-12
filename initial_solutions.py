@@ -1,5 +1,6 @@
 from problem_set_up import *
 import time
+import seaborn as sns
 
 
 class NearestNeighbour(TspSetUp):
@@ -32,6 +33,7 @@ class ChristofidesAlgorithm(TspSetUp):
 class InitialSolution(NearestNeighbour):
     def __init__(self, input_data):
         super().__init__(input_data)
+        self.obj_tracker = []
 
     def generate_initial_solution(self, initial_solution):
 
@@ -48,6 +50,21 @@ class InitialSolution(NearestNeighbour):
             self.random_tour()
 
         self.obj_value = calculate_tour_length(self.tour, self.dist_matrix, self.node_count)
+
+    def plot_objective_value(self, proportion):
+
+        start_idx = (1 - proportion) * len(self.obj_tracker)
+        start_idx = int(start_idx)
+
+        fig, ax = plt.subplots(figsize=(15, 7))
+
+        ax.plot(self.obj_tracker[start_idx:], lw=0.5)
+        ax.set_xlabel('iteration')
+        ax.set_ylabel('objective value')
+        ax.set_xlim(0)
+
+        sns.despine()
+        plt.show()
 
 
 if __name__ == "__main__":
