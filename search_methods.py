@@ -6,8 +6,25 @@ def anti_clockwise(a, b, c):
     return (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x)
 
 
-def two_opt_swap(tour, i, j):
-    if i < j:
+def cities_to_swap(node_count):
+    i = np.random.randint(node_count)
+    j = np.random.randint(node_count)
+
+    if i == j:
+        i, j = cities_to_swap(node_count)
+
+    return i, j
+
+
+def two_opt_swap(tour, i, j, node_count=None):
+    if node_count:
+        n = node_count
+    else:
+        n = len(tour)
+    j = n + j if j < 0 else j
+    i = n + i if i < 0 else i
+
+    if i <= j:
         route = tour[:i]
         reversed_section = tour[i:j + 1]
         reversed_section.reverse()
@@ -22,6 +39,30 @@ def two_opt_swap(tour, i, j):
     return route
 
 
+def greedy_two_opt(tour, obj, dist_matrix, node_count, k=25):
+    obj_best = obj
+    tour_best = tour
+
+    for idx in tour:
+
+        start_idx = idx - k
+        end_idx = idx + k
+        if start_idx >= 0:
+            nodes = tour_best[start_idx:end_idx + 1]
+        else:
+            nodes = tour_best[start_idx:] + tour_best[:end_idx + 1]
+
+        for node in nodes:
+            tour_temp = two_opt_swap(tour_best, idx, node, node_count)
+            obj_temp = calculate_tour_length(tour_temp, dist_matrix, node_count)
+
+            if obj_temp < obj_best:
+                tour_best = tour_temp
+                obj_best = obj_temp
+
+    return tour_best, obj_best
+
+
 def metropolis(tour_old, tour_new, obj_old, obj_new, temp):
     delta = obj_new - obj_old
     prob = np.exp(-delta / temp)
@@ -34,81 +75,26 @@ def metropolis(tour_old, tour_new, obj_old, obj_new, temp):
         return tour_old, obj_old
 
 
-class TwoOpt(InitialSolution):
-    def __init__(self, input_data):
-        super().__init__(input_data)
-        self.intersecting_edges = None
-
-    def intersect(self, edge1, edge2):
-
-        p1 = self.coordinates[edge1[0]]
-        q1 = self.coordinates[edge1[1]]
-        p2 = self.coordinates[edge2[0]]
-        q2 = self.coordinates[edge2[1]]
-
-        return anti_clockwise(p1, p2, q2) != anti_clockwise(q1, p2, q2) and \
-               anti_clockwise(p1, q1, p2) != anti_clockwise(p1, q1, q2)
-
-    def find_intersecting_edges(self):
-
-        self.intersecting_edges = {}
-
-        start = 1
-
-        for edge1 in self.edges[:-1]:
-            self.intersecting_edges[edge1] = []
-
-            for edge2 in self.edges[start:]:
-                if edge1[0] not in edge2 and edge1[1] not in edge2:
-                    if self.intersect(edge1, edge2):
-                        self.intersecting_edges[edge1].append(edge2)
-
-            if not self.intersecting_edges[edge1]:
-                del self.intersecting_edges[edge1]
-
-            start += 1
-
-        print(start)
-
-    def search(self, max_iterations):
-
-        for iteration in range(max_iterations):
-            i = np.random.randint(self.node_count)
-            j = np.random.randint(self.node_count)
-
-            if abs(i - j) <= 1:
-                continue
-
-            start = min(i, j)
-            end = max(i, j)
-
-            tour = two_opt_swap(self.tour, start, end)
-            if calculate_tour_length(tour, self.dist_matrix, self.node_count) < self.obj_value:
-                self.tour = tour
-
-        calculate_tour_length(self.tour, self.dist_matrix, self.node_count)
-
-
-def cities_to_swap(node_count):
-    i = np.random.randint(node_count)
-    j = np.random.randint(node_count)
-
-    if i == j:
-        i, j = cities_to_swap(node_count)
-
-    return i, j
-
-
 class SimulatedAnnealing(InitialSolution):
     def __init__(self, input_data):
         super().__init__(input_data)
         self.search_iterations = 0
-        self.obj_tracker = []
 
-    def search(self, inital_temp, cooling_rate):
-        temp = inital_temp
+    def search(self, cooling_rate, initial_temp=None):
+
+        if initial_temp:
+            initial_temp = initial_temp
+        else:
+            initial_temp = max(np.mean(self.dist_matrix[0]) * 1.5, 10000)
+
+        np.random.RandomState(seed=0)
+
+        temp = initial_temp
 
         iterations = 0
+        since_best = 0
+        best_obj = self.obj_value
+        best_tour = self.tour
         self.obj_tracker = []
 
         while temp > 1:
@@ -121,8 +107,23 @@ class SimulatedAnnealing(InitialSolution):
 
             self.tour, self.obj_value = metropolis(tour_old, tour_new, obj_old, obj_new, temp)
             self.obj_tracker.append(self.obj_value)
+
+            if self.obj_value >= best_obj:
+                since_best += 1
+            else:
+                since_best = 0
+                best_obj = self.obj_value
+                best_tour = self.tour
+
+            if since_best >= 50000:
+                self.tour = best_tour
+                self.obj_value = best_obj
+
             temp *= 1 - cooling_rate
             iterations += 1
+
+        self.tour = best_tour
+        self.obj_value = best_obj
 
         self.search_iterations = iterations
 
