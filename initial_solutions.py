@@ -42,9 +42,9 @@ class InitialSolution(NearestNeighbour):
 
         if initial_solution == "nearest neighbour":
             self.nn_initial_solution(starting_node=np.random.randint(self.node_count))
-        if initial_solution == "sequential tour":
+        elif initial_solution == "sequential tour":
             self.trivial_tour()
-        if initial_solution == 'random tour':
+        elif initial_solution == 'random tour':
             self.random_tour()
 
         self.obj_value = calculate_tour_length(self.tour, self.dist_matrix, self.node_count)
