@@ -1,6 +1,5 @@
-from problem_set_up import *
-import time
-import seaborn as sns
+import plotly.graph_objects as go
+from problem_setup import *
 
 
 class NearestNeighbour(TspSetUp):
@@ -50,24 +49,25 @@ class InitialSolution(NearestNeighbour):
             self.random_tour()
 
         self.obj_value = calculate_tour_length(self.tour, self.dist_matrix, self.node_count)
+        self.obj_tracker.append(self.obj_value)
 
-    def plot_objective_value(self, proportion):
+    def plot_objective_value(self):
 
-        start_idx = (1 - proportion) * len(self.obj_tracker)
-        start_idx = int(start_idx)
+        n = len(self.obj_tracker)
 
-        fig, ax = plt.subplots(figsize=(15, 7))
-
-        ax.plot(self.obj_tracker[start_idx:], lw=0.5)
-        ax.set_xlabel('iteration')
-        ax.set_ylabel('objective value')
-        ax.set_xlim(0)
-
-        sns.despine()
-        plt.show()
+        fig = go.Figure()
+        fig.add_trace(go.Scattergl(x=np.arange(n), y=self.obj_tracker, name="obj. value",
+                                 line_color='midnightblue'))
+        fig.update_layout(title_text='Value of the objective function throughout the search process',
+                          title_x=0.5,
+                          xaxis_title="Iteration",
+                          yaxis_title="Objective Value")
+        fig.show()
 
 
 if __name__ == "__main__":
+    import time
+
     with open('data\\tsp_51_1', 'r') as input_data_file:
         input_data = input_data_file.read()
 
