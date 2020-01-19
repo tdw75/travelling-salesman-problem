@@ -1,5 +1,5 @@
 from initial_solutions import *
-from problem_setup import calculate_tour_length
+from problem_setup import calculate_tour_length, update_tour_length
 
 
 def anti_clockwise(a, b, c):
@@ -10,7 +10,7 @@ def cities_to_swap(node_count):
     i = np.random.randint(node_count)
     j = np.random.randint(node_count)
 
-    if i == j:
+    if (i == j) or (i - j) == 1 or (i == 0 and j == node_count - 1):
         i, j = cities_to_swap(node_count)
 
     return i, j
@@ -54,7 +54,7 @@ def greedy_two_opt(tour, obj, dist_matrix, node_count, k=25):
 
         for node in nodes:
             tour_temp = two_opt_swap(tour_best, idx, node, node_count)
-            obj_temp = calculate_tour_length(tour_temp, dist_matrix, node_count)
+            obj_temp = calculate_tour_length(tour_temp, dist_matrix, node_count)  # need to change to update function
 
             if obj_temp < obj_best:
                 tour_best = tour_temp
@@ -129,7 +129,14 @@ class SimulatedAnnealing(InitialSolution):
             tour_new = two_opt_swap(self.tour, i, j)
             tour_old = self.tour
             obj_old = self.obj_value
-            obj_new = calculate_tour_length(tour_new, self.dist_matrix, self.node_count)
+
+            a_idx = i - 1 if i > 0 else self.node_count - 1
+            a = self.tour[a_idx]
+            b = self.tour[i]
+            c = self.tour[j]
+            d_idx = j + 1 if j + 1 < self.node_count else 0
+            d = self.tour[d_idx]
+            obj_new = update_tour_length(self.obj_value, self.coordinates, nodes=(a, b, c, d))
 
             self.tour, self.obj_value = metropolis(tour_old, tour_new, obj_old, obj_new, temp)
             self.obj_tracker.append(self.obj_value)
