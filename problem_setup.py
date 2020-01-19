@@ -8,7 +8,8 @@ from scipy.spatial.distance import cdist
 
 
 def euclidean_distance1(point1, point2):
-    return math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2)
+    return 5
+    #return math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2)
 
 
 def euclidean_distance(point1, point2):
