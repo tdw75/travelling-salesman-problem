@@ -56,6 +56,19 @@ def calculate_tour_length(tour, dist_matrix, node_count):
     return obj_val
 
 
+def update_tour_length(obj_val, points, nodes: tuple):
+
+    a = points[nodes[0]]
+    b = points[nodes[1]]
+    c = points[nodes[2]]
+    d = points[nodes[3]]
+
+    new_obj = obj_val - euclidean_distance(a, b) - euclidean_distance(c, d) \
+              + euclidean_distance(a, c) + euclidean_distance(b, d)
+
+    return new_obj
+
+
 class TspSetUp:
     def __init__(self, input_data):
         self.coordinates, self.node_count, self.nodes = parse_input_data(input_data)
