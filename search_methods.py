@@ -1,5 +1,5 @@
 from initial_solutions import *
-from problem_set_up import calculate_tour_length
+from problem_setup import calculate_tour_length
 
 
 def anti_clockwise(a, b, c):
@@ -75,6 +75,30 @@ def metropolis(tour_old, tour_new, obj_old, obj_new, temp):
         return tour_old, obj_old
 
 
+class IteratedTwoOpt(InitialSolution):
+    def __init__(self, input_data):
+        super().__init__(input_data)
+        self.search_iterations = 0
+        self.improvement = None
+
+    def search(self, k=50):
+
+        if not self.tour:
+            raise ValueError("No initial solution has been set")
+
+        tour_new, obj_new = greedy_two_opt(self.tour, self.obj_value, self.dist_matrix, self.node_count, k=k)
+        improvement = self.obj_value - obj_new
+        self.tour, self.obj_value = tour_new, obj_new
+        self.obj_tracker.append(self.obj_value)
+
+        while improvement > 0:
+            tour_new, obj_new = greedy_two_opt(self.tour, self.obj_value, self.dist_matrix, self.node_count, k=k)
+            improvement = self.obj_value - obj_new
+            self.tour, self.obj_value = tour_new, obj_new
+            self.obj_tracker.append(self.obj_value)
+            self.improvement = improvement
+
+
 class SimulatedAnnealing(InitialSolution):
     def __init__(self, input_data):
         super().__init__(input_data)
@@ -85,14 +109,16 @@ class SimulatedAnnealing(InitialSolution):
         if initial_temp:
             initial_temp = initial_temp
         else:
-            initial_temp = max(np.mean(self.dist_matrix[0]) * 1.5, 10000)
+            initial_temp = max(np.mean(self.dist_matrix[0]) * 1.5, 1000)
 
         np.random.RandomState(seed=0)
+        iterations = np.log(initial_temp * (1 - cooling_rate)) / np.log((1 + cooling_rate))
+        system_is_cool = initial_temp * (1 - cooling_rate) ** int(self.search_iterations * 0.75)
 
         temp = initial_temp
 
-        iterations = 0
         since_best = 0
+        best_reset_point = iterations / 10
         best_obj = self.obj_value
         best_tour = self.tour
         self.obj_tracker = []
@@ -115,17 +141,15 @@ class SimulatedAnnealing(InitialSolution):
                 best_obj = self.obj_value
                 best_tour = self.tour
 
-            if since_best >= 50000:
+            if since_best >= best_reset_point and temp > system_is_cool:
                 self.tour = best_tour
                 self.obj_value = best_obj
 
             temp *= 1 - cooling_rate
-            iterations += 1
 
         self.tour = best_tour
         self.obj_value = best_obj
-
-        self.search_iterations = iterations
+        self.search_iterations = len(self.obj_tracker)
 
 
 class IteratedGreedy(TspSetUp):
