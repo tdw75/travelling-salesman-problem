@@ -133,3 +133,6 @@ dmypy.json
 /solver_original.py
 /tsp_practice.ipynb
 /solver.py
+/solver_original_large.py
+/speed_complexity_practice.ipynb
+/numba_practice.ipynb
