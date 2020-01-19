@@ -4,27 +4,34 @@ import numpy as np
 import time
 import networkx as nx
 import matplotlib.pyplot as plt
+from scipy.spatial.distance import cdist
+
+
+def euclidean_distance1(point1, point2):
+    return math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2)
 
 
 def euclidean_distance(point1, point2):
-    return math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2)
+    dist = [(a - b) ** 2 for a, b in zip(point1, point2)]
+    dist = math.sqrt(sum(dist))
+    return dist
 
 
 def distance_matrix(points):
     distances = {}
-    for node, point1 in enumerate(points):
 
-        distances[node] = []
+    for node, point in enumerate(points):
+        dist = cdist(points, np.array([point]))
+        distances[node] = np.array([x[0] for x in dist])
+        # distances.append(np.array([x[0] for x in dist]))
 
-        for point2 in points:
-            distance = euclidean_distance(point1, point2)
-            distances[node].append(distance)
+    # distances = np.array(distances)
 
     return distances
 
 
 def parse_input_data(input_data):
-    Point = namedtuple("Point", ['x', 'y'])
+    # Point = namedtuple("Point", ['x', 'y'])
     lines = input_data.split('\n')
 
     node_count = int(lines[0])
@@ -34,7 +41,8 @@ def parse_input_data(input_data):
     for i in range(1, node_count + 1):
         line = lines[i]
         parts = line.split()
-        points.append(Point(float(parts[0]), float(parts[1])))
+        points.append((float(parts[0]), float(parts[1])))  # normal tuple
+        # points.append(Point(float(parts[0]), float(parts[1]))) # named tuple
 
     return points, node_count, nodes
 
@@ -74,6 +82,9 @@ class TspSetUp:
         pass
 
     def plot_tour(self):
+
+        fig, ax = plt.subplots(figsize=(15, 10))
+
         graph = nx.Graph()
         graph.add_nodes_from(self.nodes)
 
