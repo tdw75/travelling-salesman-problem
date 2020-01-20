@@ -7,10 +7,6 @@ import matplotlib.pyplot as plt
 from scipy.spatial.distance import cdist
 
 
-def euclidean_distance1(point1, point2):
-    return math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2)
-
-
 def euclidean_distance(point1, point2):
     dist = [(a - b) ** 2 for a, b in zip(point1, point2)]
     dist = math.sqrt(sum(dist))
@@ -18,16 +14,34 @@ def euclidean_distance(point1, point2):
 
 
 def distance_matrix(points):
-    distances = {}
+    dist_matrix = {}
 
     for node, point in enumerate(points):
         dist = cdist(points, np.array([point]))
-        distances[node] = np.array([x[0] for x in dist])
-        # distances.append(np.array([x[0] for x in dist]))
+        dist_matrix[node] = np.array([x[0] for x in dist])
+        # dist_matrix.append(np.array([x[0] for x in dist]))
 
-    # distances = np.array(distances)
+    # dist_matrix = np.array(dist_matrix)
 
-    return distances
+    return dist_matrix
+
+
+def nearest_k_nodes(points, dist_matrix: dict = None, k=25):
+
+    if not dist_matrix:
+
+        dist_matrix = {}
+
+        for node, point in enumerate(points):
+            dist = cdist(points, np.array([point]))
+            dist_matrix[node] = np.array([x[0] for x in dist])
+
+    nearest_k = {}
+
+    for node in dist_matrix:
+        nearest_k[node] = dist_matrix[node].argsort()[:k]
+
+    return nearest_k
 
 
 def parse_input_data(input_data):
@@ -57,7 +71,6 @@ def calculate_tour_length(tour, dist_matrix, node_count):
 
 
 def update_tour_length(obj_val, points, nodes: tuple):
-
     a = points[nodes[0]]
     b = points[nodes[1]]
     c = points[nodes[2]]
@@ -96,7 +109,7 @@ class TspSetUp:
 
     def plot_tour(self):
 
-        fig, ax = plt.subplots(figsize=(15, 10))
+        fig, ax = plt.subplots(figsize=(12, 8))
 
         graph = nx.Graph()
         graph.add_nodes_from(self.nodes)
