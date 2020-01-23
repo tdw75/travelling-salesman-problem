@@ -1,19 +1,18 @@
 from initial_solutions import *
 from problem_setup import calculate_tour_length, update_tour_length
+import random
 
 
-def anti_clockwise(a, b, c):
-    return (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x)
+def cities_to_swap(node_count, nearest_nodes, tour):
+    b_idx = np.random.randint(node_count)
+    neighbour = random.choice(nearest_nodes[tour[b_idx]])
+    d_idx = tour.index(neighbour)
+    c_idx = d_idx - 1
 
+    if (b_idx == c_idx) or (b_idx - c_idx) == 1 or (b_idx == 0 and c_idx == node_count - 1):
+        b_idx, c_idx = cities_to_swap(node_count, nearest_nodes, tour)
 
-def cities_to_swap(node_count):
-    i = np.random.randint(node_count)
-    j = np.random.randint(node_count)
-
-    if (i == j) or (i - j) == 1 or (i == 0 and j == node_count - 1):
-        i, j = cities_to_swap(node_count)
-
-    return i, j
+    return b_idx, c_idx
 
 
 def two_opt_swap(tour, i, j, node_count=None):
@@ -39,7 +38,34 @@ def two_opt_swap(tour, i, j, node_count=None):
     return route
 
 
-def greedy_two_opt(tour, obj, dist_matrix, node_count, k=25):
+# def greedy_two_opt(tour, obj, points, node_count, neighbours):
+#     obj_best = obj
+#     tour_best = tour
+#
+#     for node in range(node_count):
+#
+#         i = tour_best.index(node)
+#
+#         for neighbour in neighbours[node]:
+#
+#             d_idx = tour_best.index(neighbour)
+#             j = d_idx - 1 if d_idx > 0 else node_count - 1
+#
+#             a_idx = i - 1 if i > 0 else node_count - 1
+#             a = tour_best[a_idx]
+#             b = tour_best[i]
+#             c = tour_best[j]
+#             d = tour_best[d_idx]
+#             obj_temp = update_tour_length(obj_best, points, nodes=(a, b, c, d))
+#
+#             if obj_temp < obj_best:
+#                 tour_best = two_opt_swap(tour_best, i, j, node_count)
+#                 obj_best = obj_temp
+#
+#     return tour_best, obj_best
+
+
+def greedy_two_opt(tour, obj, points, node_count, k=25):
     obj_best = obj
     tour_best = tour
 
@@ -54,7 +80,7 @@ def greedy_two_opt(tour, obj, dist_matrix, node_count, k=25):
 
         for node in nodes:
             tour_temp = two_opt_swap(tour_best, idx, node, node_count)
-            obj_temp = calculate_tour_length(tour_temp, dist_matrix, node_count)  # need to change to update function
+            obj_temp = calculate_tour_length(tour_temp, points, node_count)  # need to change to update function
 
             if obj_temp < obj_best:
                 tour_best = tour_temp
@@ -81,27 +107,30 @@ class IteratedTwoOpt(InitialSolution):
         self.search_iterations = 0
         self.improvement = None
 
-    def search(self, k=50):
+    def search(self, k=50, max_iterations=1000):
 
         if not self.tour:
             raise ValueError("No initial solution has been set")
 
-        tour_new, obj_new = greedy_two_opt(self.tour, self.obj_value, self.dist_matrix, self.node_count, k=k)
+        tour_new, obj_new = greedy_two_opt(self.tour, self.obj_value, self.coordinates, self.node_count, k=k)
         improvement = self.obj_value - obj_new
         self.tour, self.obj_value = tour_new, obj_new
         self.obj_tracker.append(self.obj_value)
 
-        while improvement > 0:
-            tour_new, obj_new = greedy_two_opt(self.tour, self.obj_value, self.dist_matrix, self.node_count, k=k)
+        self.search_iterations = 0
+
+        while improvement > 0 and self.search_iterations <= max_iterations:
+            tour_new, obj_new = greedy_two_opt(self.tour, self.obj_value, self.coordinates, self.node_count, k=k)
             improvement = self.obj_value - obj_new
             self.tour, self.obj_value = tour_new, obj_new
             self.obj_tracker.append(self.obj_value)
             self.improvement = improvement
+            self.search_iterations += 1
 
 
 class SimulatedAnnealing(InitialSolution):
-    def __init__(self, input_data):
-        super().__init__(input_data)
+    def __init__(self, input_data, k=None):
+        super().__init__(input_data, k=k)
         self.search_iterations = 0
 
     def search(self, cooling_rate, initial_temp=None):
@@ -109,7 +138,7 @@ class SimulatedAnnealing(InitialSolution):
         if initial_temp:
             initial_temp = initial_temp
         else:
-            initial_temp = max(np.mean(self.dist_matrix[0]) * 1.5, 1000)
+            initial_temp = max(self.est_mean_edge, 1000)
 
         np.random.RandomState(seed=0)
         iterations = np.log(initial_temp * (1 - cooling_rate)) / np.log((1 + cooling_rate))
@@ -124,7 +153,7 @@ class SimulatedAnnealing(InitialSolution):
         self.obj_tracker = []
 
         while temp > 1:
-            i, j = cities_to_swap(self.node_count)
+            i, j = cities_to_swap(self.node_count, self.nearest_nodes, self.tour)
 
             tour_new = two_opt_swap(self.tour, i, j)
             tour_old = self.tour
