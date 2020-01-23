@@ -27,7 +27,6 @@ def distance_matrix(points):
 
 
 def nearest_k_nodes(points, dist_matrix: dict = None, k=25):
-
     if not dist_matrix:
 
         dist_matrix = {}
@@ -39,7 +38,7 @@ def nearest_k_nodes(points, dist_matrix: dict = None, k=25):
     nearest_k = {}
 
     for node in dist_matrix:
-        nearest_k[node] = dist_matrix[node].argsort()[:k]
+        nearest_k[node] = dist_matrix[node].argsort()[1:k + 1]
 
     return nearest_k
 
@@ -61,13 +60,15 @@ def parse_input_data(input_data):
     return points, node_count, nodes
 
 
-def calculate_tour_length(tour, dist_matrix, node_count):
-    obj_val = dist_matrix[tour[-1]][tour[0]]
+def calculate_tour_length(tour, points, node_count):
+    if not node_count:
+        node_count = len(tour)
 
+    obj = euclidean_distance(points[tour[-1]], points[tour[0]])
     for idx in range(0, node_count - 1):
-        obj_val += dist_matrix[tour[idx]][tour[idx + 1]]
+        obj += euclidean_distance(points[tour[idx]], points[tour[idx + 1]])
 
-    return obj_val
+    return obj
 
 
 def update_tour_length(obj_val, points, nodes: tuple):
@@ -82,10 +83,27 @@ def update_tour_length(obj_val, points, nodes: tuple):
     return new_obj
 
 
+def select_k(node_count):
+    if node_count <= 250:
+        return 10
+    elif node_count <= 2500:
+        return 25
+    else:
+        return 50
+
+
 class TspSetUp:
-    def __init__(self, input_data):
+    def __init__(self, input_data, k=None):
         self.coordinates, self.node_count, self.nodes = parse_input_data(input_data)
         self.dist_matrix = distance_matrix(self.coordinates)
+
+        if not k:
+            k = select_k(self.node_count)
+
+        self.nearest_nodes = nearest_k_nodes(self.coordinates, self.dist_matrix, k=k)
+        self.est_mean_edge = np.mean(self.dist_matrix[0]) * 1.5
+        del self.dist_matrix
+
         self.tour = []
         self.obj_value = None
         self.edges = None
@@ -98,11 +116,11 @@ class TspSetUp:
             self.tour.append(next_node)
             length -= 1
 
-        self.obj_value = calculate_tour_length(self.tour, self.dist_matrix, self.node_count)
+        self.obj_value = calculate_tour_length(self.tour, self.coordinates, self.node_count)
 
     def trivial_tour(self):
         self.tour = list(range(0, self.node_count))
-        self.obj_value = calculate_tour_length(self.tour, self.dist_matrix, self.node_count)
+        self.obj_value = calculate_tour_length(self.tour, self.coordinates, self.node_count)
 
     def save_solution(self):
         pass
