@@ -54,7 +54,7 @@ class InitialSolution(NearestNeighbour):
             elif initial_solution == 'random tour':
                 self.random_tour()
         else:
-            if self.node_count > 2000:
+            if self.node_count < 2000:
                 self.nn_initial_solution(starting_node=36)
             else:
                 self.trivial_tour()
