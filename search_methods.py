@@ -38,55 +38,57 @@ def two_opt_swap(tour, i, j, node_count=None):
     return route
 
 
-# def greedy_two_opt(tour, obj, points, node_count, neighbours):
-#     obj_best = obj
-#     tour_best = tour
-#
-#     for node in range(node_count):
-#
-#         i = tour_best.index(node)
-#
-#         for neighbour in neighbours[node]:
-#
-#             d_idx = tour_best.index(neighbour)
-#             j = d_idx - 1 if d_idx > 0 else node_count - 1
-#
-#             a_idx = i - 1 if i > 0 else node_count - 1
-#             a = tour_best[a_idx]
-#             b = tour_best[i]
-#             c = tour_best[j]
-#             d = tour_best[d_idx]
-#             obj_temp = update_tour_length(obj_best, points, nodes=(a, b, c, d))
-#
-#             if obj_temp < obj_best:
-#                 tour_best = two_opt_swap(tour_best, i, j, node_count)
-#                 obj_best = obj_temp
-#
-#     return tour_best, obj_best
-
-
-def greedy_two_opt(tour, obj, points, node_count, k=25):
+def greedy_two_opt(tour, obj, points, node_count, neighbours):
     obj_best = obj
     tour_best = tour
 
-    for idx in tour:
+    for node in range(node_count):
 
-        start_idx = idx - k
-        end_idx = idx + k
-        if start_idx >= 0:
-            nodes = tour_best[start_idx:end_idx + 1]
-        else:
-            nodes = tour_best[start_idx:] + tour_best[:end_idx + 1]
+        i = tour_best.index(node)
 
-        for node in nodes:
-            tour_temp = two_opt_swap(tour_best, idx, node, node_count)
-            obj_temp = calculate_tour_length(tour_temp, points, node_count)  # need to change to update function
+        for neighbour in neighbours[node]:
+
+            d_idx = tour_best.index(neighbour)
+            j = d_idx - 1 if d_idx > 0 else node_count - 1
+            a_idx = i - 1 if i > 0 else node_count - 1
+
+            a = tour_best[a_idx]
+            b = tour_best[i]
+            c = tour_best[j]
+            d = tour_best[d_idx]
+            if a == c:
+                continue
+            obj_temp = update_tour_length(obj_best, points, nodes=(a, b, c, d))
 
             if obj_temp < obj_best:
-                tour_best = tour_temp
+                tour_best = two_opt_swap(tour_best, i, j, node_count)
                 obj_best = obj_temp
 
     return tour_best, obj_best
+
+
+# def greedy_two_opt_old(tour, obj, points, node_count, k=25):
+#     obj_best = obj
+#     tour_best = tour
+#
+#     for idx in tour:
+#
+#         start_idx = idx - k
+#         end_idx = idx + k
+#         if start_idx >= 0:
+#             nodes = tour_best[start_idx:end_idx + 1]
+#         else:
+#             nodes = tour_best[start_idx:] + tour_best[:end_idx + 1]
+#
+#         for node in nodes:
+#             tour_temp = two_opt_swap(tour_best, idx, node, node_count)
+#             obj_temp = calculate_tour_length(tour_temp, points, node_count)
+#
+#             if obj_temp < obj_best:
+#                 tour_best = tour_temp
+#                 obj_best = obj_temp
+#
+#     return tour_best, obj_best
 
 
 def metropolis(tour_old, tour_new, obj_old, obj_new, temp):
