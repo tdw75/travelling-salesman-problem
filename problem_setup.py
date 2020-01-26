@@ -1,5 +1,4 @@
 import math
-from collections import namedtuple
 import numpy as np
 import time
 import networkx as nx
@@ -19,9 +18,6 @@ def distance_matrix(points):
     for node, point in enumerate(points):
         dist = cdist(points, np.array([point]))
         dist_matrix[node] = np.array([x[0] for x in dist])
-        # dist_matrix.append(np.array([x[0] for x in dist]))
-
-    # dist_matrix = np.array(dist_matrix)
 
     return dist_matrix
 
@@ -44,7 +40,6 @@ def nearest_k_nodes(points, dist_matrix: dict = None, k=25):
 
 
 def parse_input_data(input_data):
-    # Point = namedtuple("Point", ['x', 'y'])
     lines = input_data.split('\n')
 
     node_count = int(lines[0])
@@ -54,8 +49,7 @@ def parse_input_data(input_data):
     for i in range(1, node_count + 1):
         line = lines[i]
         parts = line.split()
-        points.append((float(parts[0]), float(parts[1])))  # normal tuple
-        # points.append(Point(float(parts[0]), float(parts[1]))) # named tuple
+        points.append((float(parts[0]), float(parts[1])))
 
     return points, node_count, nodes
 
@@ -89,7 +83,7 @@ def select_k(node_count):
     elif node_count <= 2500:
         return 25
     else:
-        return 50
+        return 25
 
 
 class TspSetUp:
