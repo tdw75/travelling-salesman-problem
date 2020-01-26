@@ -1,5 +1,5 @@
 from initial_solutions import *
-from problem_setup import calculate_tour_length, update_tour_length
+from problem_setup import update_tour_length
 import random
 
 
@@ -46,11 +46,11 @@ def greedy_two_opt(tour, obj, points, node_count, neighbours):
 
         i = tour_best.index(node)
 
-        for neighbour in neighbours[node]:
+        for neighbour in neighbours[node]:  # vectorise???
 
             d_idx = tour_best.index(neighbour)
-            j = d_idx - 1 if d_idx > 0 else node_count - 1
-            a_idx = i - 1 if i > 0 else node_count - 1
+            j = d_idx - 1
+            a_idx = i - 1
 
             a = tour_best[a_idx]
             b = tour_best[i]
@@ -65,30 +65,6 @@ def greedy_two_opt(tour, obj, points, node_count, neighbours):
                 obj_best = obj_temp
 
     return tour_best, obj_best
-
-
-# def greedy_two_opt_old(tour, obj, points, node_count, k=25):
-#     obj_best = obj
-#     tour_best = tour
-#
-#     for idx in tour:
-#
-#         start_idx = idx - k
-#         end_idx = idx + k
-#         if start_idx >= 0:
-#             nodes = tour_best[start_idx:end_idx + 1]
-#         else:
-#             nodes = tour_best[start_idx:] + tour_best[:end_idx + 1]
-#
-#         for node in nodes:
-#             tour_temp = two_opt_swap(tour_best, idx, node, node_count)
-#             obj_temp = calculate_tour_length(tour_temp, points, node_count)
-#
-#             if obj_temp < obj_best:
-#                 tour_best = tour_temp
-#                 obj_best = obj_temp
-#
-#     return tour_best, obj_best
 
 
 def metropolis(tour_old, tour_new, obj_old, obj_new, temp):
@@ -109,12 +85,13 @@ class IteratedTwoOpt(InitialSolution):
         self.search_iterations = 0
         self.improvement = None
 
-    def search(self, k=50, max_iterations=1000):
+    def search(self, max_iterations=1000):
 
         if not self.tour:
             raise ValueError("No initial solution has been set")
 
-        tour_new, obj_new = greedy_two_opt(self.tour, self.obj_value, self.coordinates, self.node_count, k=k)
+        tour_new, obj_new = greedy_two_opt(self.tour, self.obj_value, self.coordinates, self.node_count,
+                                           self.nearest_nodes)
         improvement = self.obj_value - obj_new
         self.tour, self.obj_value = tour_new, obj_new
         self.obj_tracker.append(self.obj_value)
@@ -122,7 +99,8 @@ class IteratedTwoOpt(InitialSolution):
         self.search_iterations = 0
 
         while improvement > 0 and self.search_iterations <= max_iterations:
-            tour_new, obj_new = greedy_two_opt(self.tour, self.obj_value, self.coordinates, self.node_count, k=k)
+            tour_new, obj_new = greedy_two_opt(self.tour, self.obj_value, self.coordinates, self.node_count,
+                                               self.nearest_nodes)
             improvement = self.obj_value - obj_new
             self.tour, self.obj_value = tour_new, obj_new
             self.obj_tracker.append(self.obj_value)
@@ -144,7 +122,9 @@ class SimulatedAnnealing(InitialSolution):
 
         np.random.RandomState(seed=0)
         iterations = np.log(initial_temp * (1 - cooling_rate)) / np.log((1 + cooling_rate))
-        system_is_cool = initial_temp * (1 - cooling_rate) ** int(self.search_iterations * 0.75)
+        cooled_system = initial_temp * (1 - cooling_rate) ** int(iterations * 0.9)
+        cooling_rate_reduced = False
+        reduced_cooling_rate = cooling_rate * 0.25
 
         temp = initial_temp
 
@@ -179,9 +159,13 @@ class SimulatedAnnealing(InitialSolution):
                 best_obj = self.obj_value
                 best_tour = self.tour
 
-            if since_best >= best_reset_point and temp > system_is_cool:
+            if since_best >= best_reset_point and temp > cooled_system:
                 self.tour = best_tour
                 self.obj_value = best_obj
+
+            if temp < cooled_system and not cooling_rate_reduced:
+                cooling_rate = reduced_cooling_rate
+                cooling_rate_reduced = True
 
             temp *= 1 - cooling_rate
 
